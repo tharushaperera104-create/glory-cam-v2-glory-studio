@@ -1,8 +1,15 @@
 package com.glorycam.app.camera
 
+import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -18,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -381,9 +389,12 @@ class CameraViewModel : ViewModel() {
 
                         // Step 5: Advanced unsharp details lens sharpening matrix algorithm
                         setCaptureState(CaptureState.AISharpening)
-                        
-                        // Run actual pixel calculation on background Dispatcher for perfect UI responsiveness
+
                         withContext(Dispatchers.IO) {
+                            // Rotation fix: correct EXIF orientation before AI processing
+                            fixImageRotation(file)
+
+                            // Run offline AI enhancement pipeline
                             GloryOfflineAIEngine.processAndOptimizeImage(
                                 sourceFile = file,
                                 isNightMode = isNight,
@@ -392,13 +403,16 @@ class CameraViewModel : ViewModel() {
                                 cameraMode = activeMode,
                                 watermarkEnabled = watermark
                             )
+
+                            // Save to system gallery (Samsung Gallery, Google Photos, etc.)
+                            saveToSystemGallery(context, file, filename)
                         }
                         delay(500)
 
                         // Complete successfully & show confirmation
                         setCaptureState(CaptureState.Success(Uri.fromFile(file)))
                         addPhoto(context, file, selectedFilter)
-                        
+
                         delay(1500)
                         setCaptureState(CaptureState.Idle)
                     }
@@ -624,4 +638,83 @@ class CameraViewModel : ViewModel() {
         delay(1500)
         setCaptureState(CaptureState.Idle)
     }
+    /**
+     * Reads EXIF orientation tag and physically rotates the JPEG bitmap
+     * so it displays correctly in all gallery apps (Samsung, Google, etc.)
+     */
+    private fun fixImageRotation(file: File) {
+        try {
+            val exif = ExifInterface(file.absolutePath)
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            val degrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90  -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+            if (degrees == 0f) return
+
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return
+            val matrix = Matrix().apply { postRotate(degrees) }
+            val rotated = Bitmap.createBitmap(
+                bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
+            )
+            bitmap.recycle()
+
+            FileOutputStream(file).use { out ->
+                rotated.compress(Bitmap.CompressFormat.JPEG, 97, out)
+            }
+            rotated.recycle()
+
+            // Reset EXIF orientation to NORMAL after physical rotation
+            val exifOut = ExifInterface(file.absolutePath)
+            exifOut.setAttribute(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL.toString()
+            )
+            exifOut.saveAttributes()
+        } catch (e: Exception) {
+            Log.e("GloryCam", "Rotation fix failed: ${e.message}")
+        }
+    }
+
+    /**
+     * Inserts the processed photo into the system MediaStore so it appears
+     * in Samsung Gallery, Google Photos, and all other gallery apps.
+     * Handles both Android 10+ (RELATIVE_PATH) and older versions (media scan).
+     */
+    private fun saveToSystemGallery(context: Context, file: File, fileName: String) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ — insert via MediaStore with RELATIVE_PATH
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.Images.Media.RELATIVE_PATH,
+                        Environment.DIRECTORY_PICTURES + "/GloryCam")
+                }
+                val uri = context.contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
+                )
+                uri?.let {
+                    context.contentResolver.openOutputStream(it)?.use { stream ->
+                        file.inputStream().copyTo(stream)
+                    }
+                }
+            } else {
+                // Android 9 and below — broadcast media scan so gallery picks it up
+                val mediaScanIntent = android.content.Intent(
+                    android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE
+                )
+                mediaScanIntent.data = Uri.fromFile(file)
+                context.sendBroadcast(mediaScanIntent)
+            }
+        } catch (e: Exception) {
+            Log.e("GloryCam", "Gallery save failed: ${e.message}")
+        }
+    }
+
 }
