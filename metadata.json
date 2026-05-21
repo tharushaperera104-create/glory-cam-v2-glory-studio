@@ -1,0 +1,6 @@
+{
+  "name": "Glory Cam",
+  "description": "Glory Cam is a beautiful, professional, and featured camera app featuring live filters, high-quality capture, simple flash options, camera rotation and grid views, all built with modern Jetpack Compose.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
