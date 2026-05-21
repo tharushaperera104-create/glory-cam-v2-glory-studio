@@ -95,6 +95,10 @@ class CameraViewModel : ViewModel() {
         _isAutoExposureActive.value = mode != CameraMode.PRO
     }
 
+    fun toggleAutoExposure() {
+        _isAutoExposureActive.value = !_isAutoExposureActive.value
+    }
+
     fun setTimerPreset(seconds: Int) {
         _timerPreset.value = seconds
     }
