@@ -96,13 +96,23 @@ fun CameraPreview(
         imageCapture.flashMode = flashMode.flashModeValue
     }
 
-    // Bind real-time Exposure compensation Index directly on the active hardware lens
-    LaunchedEffect(cameraInstance, exposureIndex) {
+    // Exposure compensation: only apply manually in PRO mode.
+    // In all other modes CameraX auto-exposure (AE) handles ISO + shutter automatically.
+    LaunchedEffect(cameraInstance, exposureIndex, selectedMode) {
         val camera = cameraInstance ?: return@LaunchedEffect
-        try {
-            camera.cameraControl.setExposureCompensationIndex(exposureIndex)
-        } catch (t: Throwable) {
-            Log.e("CameraPreview", "Failed to set exposure compensation to $exposureIndex", t)
+        if (selectedMode == CameraMode.PRO) {
+            try {
+                camera.cameraControl.setExposureCompensationIndex(exposureIndex)
+            } catch (t: Throwable) {
+                Log.e("CameraPreview", "Failed to set exposure compensation to $exposureIndex", t)
+            }
+        } else {
+            // Reset to 0 so CameraX AE runs freely without any manual offset
+            try {
+                camera.cameraControl.setExposureCompensationIndex(0)
+            } catch (t: Throwable) {
+                Log.e("CameraPreview", "Failed to reset exposure compensation", t)
+            }
         }
     }
 
