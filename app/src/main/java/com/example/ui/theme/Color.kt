@@ -14,4 +14,4 @@ val DarkSurfaceOverlay = Color(0xE61F2230) // Semi-transparent overlay surface
 val CyanAccent = Color(0xFF00FFCC)     // Cinematic sci-fi cyan highlight
 val RoseAccent = Color(0xFFFF2D55)     // Video recording glow crimson
 val WhiteCream = Color(0xFFF5F5FA)     // Elegant text off-white
-val MutedSlate = Color(0xFF868C9E)     // Silent icon slate gray
+val MutedSlate = Color(0xFF8896A5)     // Silent icon slate gray
