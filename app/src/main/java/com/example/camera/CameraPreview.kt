@@ -43,6 +43,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.ui.graphics.Brush
+import com.example.camera.ui.theme.MutedSlate
 
 @Composable
 fun CameraPreview(
