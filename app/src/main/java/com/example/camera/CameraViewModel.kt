@@ -77,6 +77,10 @@ class CameraViewModel : ViewModel() {
     private val _isWatermarkEnabled = MutableStateFlow(true)
     val isWatermarkEnabled: StateFlow<Boolean> = _isWatermarkEnabled.asStateFlow()
 
+    // Auto exposure: true when not in PRO mode (CameraX handles ISO/shutter automatically)
+    private val _isAutoExposureActive = MutableStateFlow(true)
+    val isAutoExposureActive: StateFlow<Boolean> = _isAutoExposureActive.asStateFlow()
+
     private val _activePhoto = MutableStateFlow<CapturedMedia?>(null)
     val activePhoto: StateFlow<CapturedMedia?> = _activePhoto.asStateFlow()
 
@@ -85,16 +89,10 @@ class CameraViewModel : ViewModel() {
 
     fun selectCameraMode(mode: CameraMode) {
         _selectedMode.value = mode
-        if (mode == CameraMode.NIGHT) {
-            _isNightModeOn.value = true
-        } else {
-            _isNightModeOn.value = false
-        }
-        if (mode == CameraMode.PRO) {
-            _isProControlsOpen.value = true
-        } else {
-            _isProControlsOpen.value = false
-        }
+        _isNightModeOn.value = mode == CameraMode.NIGHT
+        _isProControlsOpen.value = mode == CameraMode.PRO
+        // Auto exposure is active in all modes except PRO (where user sets ISO/EV manually)
+        _isAutoExposureActive.value = mode != CameraMode.PRO
     }
 
     fun setTimerPreset(seconds: Int) {
@@ -393,7 +391,16 @@ class CameraViewModel : ViewModel() {
                         withContext(Dispatchers.IO) {
                             // Rotation fix: correct EXIF orientation before AI processing
                             fixImageRotation(file)
+                        }
 
+                        // Step 6: Offline AI Noise Reduction (TFLite / software bilateral)
+                        setCaptureState(CaptureState.AINoiseReduction)
+                        withContext(Dispatchers.IO) {
+                            GloryNoiseReductionEngine.reduceNoise(file)
+                        }
+                        delay(600)
+
+                        withContext(Dispatchers.IO) {
                             // Run offline AI enhancement pipeline
                             GloryOfflineAIEngine.processAndOptimizeImage(
                                 sourceFile = file,
@@ -401,7 +408,8 @@ class CameraViewModel : ViewModel() {
                                 exposureIndex = exp,
                                 isoValue = iso,
                                 cameraMode = activeMode,
-                                watermarkEnabled = watermark
+                                watermarkEnabled = watermark,
+                                isAutoExposure = _isAutoExposureActive.value
                             )
 
                             // Save to system gallery (Samsung Gallery, Google Photos, etc.)
