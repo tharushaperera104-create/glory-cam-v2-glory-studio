@@ -42,7 +42,8 @@ object GloryOfflineAIEngine {
         exposureIndex: Int = 0,
         isoValue: Int = 400,
         cameraMode: CameraMode = CameraMode.STANDARD,
-        watermarkEnabled: Boolean = true
+        watermarkEnabled: Boolean = true,
+        isAutoExposure: Boolean = true
     ): Boolean {
         if (!sourceFile.exists() || sourceFile.length() == 0L) {
             Log.e(TAG, "Source file empty or does not exist: $sourceFile")
@@ -160,7 +161,7 @@ object GloryOfflineAIEngine {
 
                 // 5. Beautiful Gold-Capped "Shot on GloryCam" Studio Watermark
                 watermarkedBitmap = if (watermarkEnabled) {
-                    addElegantWatermark(portraitBitmap, cameraMode, isoValue, exposureIndex)
+                    addElegantWatermark(portraitBitmap, cameraMode, isoValue, exposureIndex, isAutoExposure)
                 } else {
                     portraitBitmap
                 }
@@ -302,7 +303,8 @@ object GloryOfflineAIEngine {
         src: Bitmap,
         mode: CameraMode,
         iso: Int,
-        exposure: Int
+        exposure: Int,
+        isAutoExposure: Boolean = true
     ): Bitmap {
         val width = src.width
         val height = src.height
@@ -367,7 +369,11 @@ object GloryOfflineAIEngine {
         }
         
         val evSign = if (exposure >= 0) "+$exposure" else "$exposure"
-        val cameraString = "ISO $iso    f/1.8    1/180s    $evSign EV"
+        val cameraString = if (isAutoExposure) {
+            "ISO AUTO    f/1.8    AUTO    $evSign EV"
+        } else {
+            "ISO $iso    f/1.8    1/180s    $evSign EV"
+        }
         val textWidth = paramPaint.measureText(cameraString)
         val rightX = width - paddingX - textWidth
         
