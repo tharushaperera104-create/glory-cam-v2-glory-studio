@@ -254,6 +254,7 @@ fun GloryCustomCameraView(viewModel: CameraViewModel) {
     val exposureIndex by viewModel.exposureIndex.collectAsState()
     val isoValue by viewModel.isoValue.collectAsState()
     val isProControlsOpen by viewModel.isProControlsOpen.collectAsState()
+    val isAutoExposureActive by viewModel.isAutoExposureActive.collectAsState()
 
     var isGalleryOpen by remember { mutableStateOf(false) }
 
@@ -516,6 +517,41 @@ fun GloryCustomCameraView(viewModel: CameraViewModel) {
                                         textAlign = TextAlign.Center
                                     )
                                 }
+                                CaptureState.AINoiseReduction -> {
+                                    CircularProgressIndicator(
+                                        color = Color(0xFF00E5CC),
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    Text(
+                                        text = "AI NOISE REDUCTION",
+                                        color = Color(0xFF00E5CC),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "AI Noise Reduction: Processing...",
+                                        color = Color(0xFF00E5CC),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "AI Noise ඉවත් කරමින් පවතී...",
+                                        color = Color(0xFF00E5CC).copy(alpha = 0.75f),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = "Running offline Real-ESRGAN bilateral noise filtering to preserve natural textures...",
+                                        color = MutedSlate,
+                                        fontSize = 12.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                                 is CaptureState.Success -> {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
@@ -756,6 +792,48 @@ fun GloryCustomCameraView(viewModel: CameraViewModel) {
                                 }
                             }
                         }
+                    }
+                }
+
+                // 7b. AE Auto / Manual toggle floating button (bottom-left of viewfinder)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 16.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            if (isAutoExposureActive) Color(0xFF00B09B).copy(alpha = 0.90f)
+                            else Color(0xFFFFB703).copy(alpha = 0.90f)
+                        )
+                        .border(
+                            1.dp,
+                            if (isAutoExposureActive) Color(0xFF00E5CC) else GloryGold,
+                            RoundedCornerShape(18.dp)
+                        )
+                        .clickable { viewModel.toggleAutoExposure() }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isAutoExposureActive)
+                                Icons.Default.BrightnessAuto
+                            else
+                                Icons.Default.Exposure,
+                            contentDescription = if (isAutoExposureActive) "Auto Exposure" else "Manual Exposure",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = if (isAutoExposureActive) "AE AUTO" else "AE MAN",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
                     }
                 }
 
