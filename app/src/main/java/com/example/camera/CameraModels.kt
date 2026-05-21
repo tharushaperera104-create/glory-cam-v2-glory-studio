@@ -37,6 +37,7 @@ sealed interface CaptureState {
     object AIDenoising : CaptureState
     object AIColorEnhancing : CaptureState
     object AISharpening : CaptureState
+    object AINoiseReduction : CaptureState
     data class Success(val fileUri: Uri) : CaptureState
     data class Error(val message: String) : CaptureState
 }
