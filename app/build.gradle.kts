@@ -71,14 +71,8 @@ secrets {
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
-  // TensorFlow Lite — Offline AI Noise Reduction (namespace conflict fix)
-  implementation("org.tensorflow:tensorflow-lite:2.14.0") {
-    exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
-  }
-  implementation("org.tensorflow:tensorflow-lite-support:0.4.4") {
-    exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
-  }
-  implementation("org.tensorflow:tensorflow-lite-api:2.14.0")
+  // ONNX Runtime — Offline AI Noise Reduction
+  implementation("com.microsoft.onnxruntime:onnxruntime-android:1.16.3")
 
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
