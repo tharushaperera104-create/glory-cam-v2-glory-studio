@@ -1,4 +1,4 @@
-package com.example.camera
+package com.glorycam.app.camera
 
 import android.content.Context
 import android.graphics.Bitmap

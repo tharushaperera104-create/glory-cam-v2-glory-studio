@@ -75,9 +75,6 @@ dependencies {
   implementation("org.tensorflow:tensorflow-lite:2.14.0") {
     exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
   }
-  implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0") {
-    exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
-  }
   implementation("org.tensorflow:tensorflow-lite-support:0.4.4") {
     exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
   }

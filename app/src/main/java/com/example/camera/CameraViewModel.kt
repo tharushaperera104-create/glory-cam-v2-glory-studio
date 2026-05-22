@@ -400,7 +400,7 @@ class CameraViewModel : ViewModel() {
                         // Step 6: Offline AI Noise Reduction (TFLite / software bilateral)
                         setCaptureState(CaptureState.AINoiseReduction)
                         withContext(Dispatchers.IO) {
-                            GloryNoiseReductionEngine.reduceNoise(file)
+                            GloryNoiseReductionEngine.reduceNoise(file, context)
                         }
                         delay(600)
 
